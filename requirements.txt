@@ -5,3 +5,4 @@ PyPDF2
 langchain
 langchain_community
 flask-cors
+gunicorn
