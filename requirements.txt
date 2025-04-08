@@ -6,3 +6,4 @@ langchain
 langchain_community
 flask-cors
 gunicorn
+faiss-cpu
