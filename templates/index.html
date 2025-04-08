@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask App</title>
+</head>
+<body>
+    <h1>System Assistance</h1>
+    <form id="userForm">
+        <label for="user_input">Ask:</label>
+        <input type="text" id="user_input" name="user_input">
+        <button type="submit">Submit</button>
+    </form>
+    <div id="response"></div>
+
+    <script>
+        const form = document.getElementById('userForm');
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const userInput = document.getElementById('user_input').value;
+            const responseDiv = document.getElementById('response');
+
+            const response = await fetch(`/ask?user_input=${userInput}`);
+            const data = await response.json();
+
+            responseDiv.innerHTML = data.message;
+        });
+    </script>
+</body>
+</html>
