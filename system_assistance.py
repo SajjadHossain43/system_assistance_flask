@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, jsonify
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from dotenv import load_dotenv
 import os
@@ -20,8 +20,27 @@ def home():
 @app.route('/ask', methods=['GET'])
 def get_system_response() -> str:
     user_input = request.args.get('user_input')
-    #return jsonify({"message": f"{process_input(user_input, f'{os.getcwd()}/FAISS')}"})
-    return process_input(user_input, f'{os.getcwd()}/FAISS')
+    return jsonify({"message": f"{process_input(user_input, f'{os.getcwd()}/FAISS')}"})
+    #return process_input(user_input, f'{os.getcwd()}/FAISS')
+
+@app.route('/upload_file', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        return redirect(request.url)
+    if file:
+        save_file(file)
+
+def save_file(file):
+    auto_config()
+    if not os.path.exists(os.path.join(os.getcwd(), 'pdf')): os.mkdir(f'{os.getcwd()}/pdf')
+    if not os.path.exists(os.path.join(os.getcwd(), 'FAISS')): os.mkdir(f'{os.getcwd()}/FAISS')
+    file_path = f"{os.path.join(os.getcwd(), 'pdf')}/{file.filename}"
+    with open(file_path, "wb") as f:
+        f.write(file.read())
+    return jsonify({"message": f"File saved as {file_path}"}) if generate_index(pdf_path=os.path.join(os.getcwd(), 'pdf'), index_path=os.path.join(os.getcwd(), 'FAISS')) else jsonify({"message": f'Error occurred when saving the file, could not save.'})
 
 def get_system_response(question: str) -> str:
     return process_input(question, f'{os.getcwd()}/FAISS')
@@ -84,10 +103,6 @@ def get_conversation_chain():
 
 def process_input(question: str, index_path: os.path) -> str:
     auto_config()
-    print("GPT_MODEL:", os.getenv("GPT_MODEL"))
-    print("API_KEY:", os.getenv("API_KEY"))
-    print("GPT_API_VERSION:", os.getenv("GPT_API_VERSION"))
-    print("OPENAI_ENDPOINT:", os.getenv("OPENAI_ENDPOINT"))
     pdf_content = FAISS.load_local(index_path, embeddings=get_embedding_instance(), allow_dangerous_deserialization=True)
     if len(question) > 0:
         model_input = pdf_content.similarity_search(question)
@@ -100,15 +115,6 @@ def process_input(question: str, index_path: os.path) -> str:
         except Exception as e:
             #return json.dumps({'answer': 'Sorry, I am not able to answer your question due to some problem'})
             return e.with_traceback()
-
-#def save_file(file: UploadFile = File(...)):
-    #if not os.path.exists(os.path.join(os.getcwd(), 'pdf')): os.mkdir(f'{os.getcwd()}/pdf')
-    #if not os.path.exists(os.path.join(os.getcwd(), 'FAISS')): os.mkdir(f'{os.getcwd()}/FAISS')
-    #file_path = f"{os.path.join(os.getcwd(), 'pdf')}/1.pdf"
-    #with open(file_path, "wb") as f:
-        #f.write(await file.read())
-    #generate_index(pdf_path=os.path.join(os.getcwd(), 'pdf'), index_path=os.path.join(os.getcwd(), 'FAISS'))
-    #return f"File saved as {file_path}"
 
 if __name__ == '__main__':
     app.run(debug=True)

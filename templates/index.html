@@ -7,16 +7,27 @@
 </head>
 <body>
     <h1>System Assistance</h1>
+
+    <!-- User Input Form -->
     <form id="userForm">
         <label for="user_input">Ask:</label>
         <input type="text" id="user_input" name="user_input">
         <button type="submit">Submit</button>
     </form>
+
     <div id="response"></div>
 
+    <!-- File Upload Form -->
+    <h2>Upload a File</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file">
+        <button type="submit">Upload</button>
+    </form>
+    <div id="uploadResponse"></div>
+
     <script>
-        const form = document.getElementById('userForm');
-        form.addEventListener('submit', async function (event) {
+        // User input form submission
+        document.getElementById('userForm').addEventListener('submit', async function (event) {
             event.preventDefault();
             const userInput = document.getElementById('user_input').value;
             const responseDiv = document.getElementById('response');
@@ -25,6 +36,29 @@
             const data = await response.json();
 
             responseDiv.innerHTML = data.message;
+        });
+
+        // File upload form submission
+        document.getElementById('uploadForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput').files[0];
+            const uploadResponseDiv = document.getElementById('uploadResponse');
+
+            if (!fileInput) {
+                uploadResponseDiv.innerHTML = "Please select a file.";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput);
+
+            const response = await fetch('/upload_file', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            uploadResponseDiv.innerHTML = result;
         });
     </script>
 </body>
